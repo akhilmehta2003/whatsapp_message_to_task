@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>WhatsApp – Message-to-Task Feature</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --wa-green:#00A884;
+  --wa-green-dark:#008069;
+  --wa-green-light:#D9FDD3;
+  --wa-green-xlight:#F0FBF7;
+  --wa-teal:#075E54;
+  --wa-teal-dark:#054640;
+  --wa-bg:#ECE5DD;
+  --wa-panel:#111B21;
+  --wa-panel2:#202C33;
+  --wa-panel3:#2A3942;
+  --wa-text:#E9EDEF;
+  --wa-text2:#8696A0;
+  --wa-text3:#667781;
+  --wa-white:#FFFFFF;
+  --wa-bubble-out:#D9FDD3;
+  --wa-bubble-in:#FFFFFF;
+  --wa-blue:#53BDEB;
+  --wa-red:#F15C6D;
+  --wa-yellow:#FFC107;
+  --wa-purple:#7C4DFF;
+  --wa-orange:#FF7043;
+  --shadow:0 2px 12px rgba(0,0,0,0.25);
+  --shadow-lg:0 8px 32px rgba(0,0,0,0.35);
+  --font:'Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font);background:#1A1A2E;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;}
+
+/* ── DEVICE FRAME ── */
+.device-frame{
+  display:flex;gap:32px;align-items:flex-start;
+  max-width:1360px;width:100%;
+}
+.phone{
+  width:380px;flex-shrink:0;height:780px;
+  background:var(--wa-panel);border-radius:40px;overflow:hidden;
+  box-shadow:0 0 0 8px #2A2A3E, 0 0 0 10px #1A1A2E, var(--shadow-lg);
+  position:relative;display:flex;flex-direction:column;
+}
+.phone-notch{
+  height:30px;background:var(--wa-panel);display:flex;
+  align-items:center;justify-content:center;
+}
+.notch-bar{width:120px;height:6px;background:#2A2A3E;border-radius:3px;}
+
+/* ── SCREENS ── */
+.screen{display:none;flex-direction:column;flex:1;overflow:hidden;position:absolute;inset:30px 0 0 0;}
+.screen.active{display:flex;}
+
+/* ── STATUS BAR ── */
+.status-bar{
+  background:var(--wa-teal);height:24px;display:flex;align-items:center;
+  justify-content:space-between;padding:0 16px;flex-shrink:0;
+}
+.status-time{font-size:11px;font-weight:700;color:white;}
+.status-icons{display:flex;align-items:center;gap:4px;font-size:10px;color:white;}
+
+/* ── CHATS LIST SCREEN ── */
+.chats-header{
+  background:var(--wa-teal);padding:8px 16px 10px;display:flex;
+  align-items:center;justify-content:space-between;flex-shrink:0;
+}
+.chats-title{font-size:20px;font-weight:800;color:white;}
+.chats-icons{display:flex;gap:16px;}
+.icon-btn{font-size:18px;color:rgba(255,255,255,0.80);cursor:pointer;background:none;border:none;}
+.search-bar{
+  background:var(--wa-panel2);margin:8px 12px;border-radius:8px;
+  padding:8px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0;
+}
+.search-bar input{background:transparent;border:none;outline:none;color:var(--wa-text);font-size:14px;font-family:var(--font);width:100%;}
+.search-bar input::placeholder{color:var(--wa-text2);}
+.chat-tabs{display:flex;border-bottom:2px solid rgba(255,255,255,0.08);flex-shrink:0;padding:0 16px;}
+.chat-tab{padding:10px 16px;font-size:13px;font-weight:600;color:var(--wa-text2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;}
+.chat-tab.active{color:var(--wa-green);border-bottom-color:var(--wa-green);}
+.chat-list{flex:1;overflow-y:auto;}
+.chat-item{
+  display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;
+  border-bottom:1px solid rgba(255,255,255,0.05);transition:background 0.15s;
+}
+.chat-item:hover{background:var(--wa-panel2);}
+.chat-item.active{background:var(--wa-panel3);}
+.chat-avatar{
+  width:50px;height:50px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:22px;
+  font-weight:700;color:white;
+}
+.chat-info{flex:1;min-width:0;}
+.chat-top{display:flex;justify-content:space-between;align-items:center;}
+.chat-name{font-size:15px;font-weight:600;color:var(--wa-text);}
+.chat-time{font-size:11.5px;color:var(--wa-text2);}
+.chat-preview{font-size:13px;color:var(--wa-text2);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.chat-unread{
+  min-width:20px;height:20px;background:var(--wa-green);border-radius:50%;
+  font-size:11px;font-weight:700;color:white;display:flex;align-items:center;justify-content:center;padding:0 4px;margin-top:2px;
+}
+.bottom-nav{
+  display:flex;background:var(--wa-panel);border-top:1px solid rgba(255,255,255,0.06);
+  padding:8px 0 10px;flex-shrink:0;
+}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;}
+.nav-icon{font-size:22px;color:var(--wa-text2);}
+.nav-icon.active-nav{color:var(--wa-green);}
+.nav-label{font-size:10px;color:var(--wa-text2);}
+.nav-label.active-nav{color:var(--wa-green);}
+.nav-badge{
+  position:relative;
+}
+.nav-badge::after{
+  content:'3';position:absolute;top:-4px;right:-8px;
+  background:var(--wa-green);color:white;font-size:9px;font-weight:800;
+  width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+}
+
+/* ── CHAT SCREEN ── */
+.chat-header{
+  background:var(--wa-panel2);padding:10px 12px;display:flex;align-items:center;gap:10px;flex-shrink:0;
+  border-bottom:1px solid rgba(255,255,255,0.06);
+}
+.back-btn{font-size:20px;color:var(--wa-text2);cursor:pointer;background:none;border:none;}
+.chat-header-avatar{
+  width:40px;height:40px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:white;flex-shrink:0;
+}
+.chat-header-info{flex:1;}
+.chat-header-name{font-size:15px;font-weight:600;color:var(--wa-text);}
+.chat-header-status{font-size:12px;color:var(--wa-text2);margin-top:1px;}
+.chat-header-icons{display:flex;gap:14px;}
+.messages-area{
+  flex:1;overflow-y:auto;padding:12px 10px;
+  background-image:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.02'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  background-color:#0B141A;
+}
+.date-sep{text-align:center;margin:10px 0;}
+.date-sep span{background:rgba(17,27,33,0.85);color:var(--wa-text2);font-size:11px;padding:4px 10px;border-radius:8px;}
+.msg-wrap{display:flex;margin-bottom:4px;}
+.msg-wrap.out{justify-content:flex-end;}
+.msg-wrap.in{justify-content:flex-start;}
+.bubble{
+  max-width:72%;padding:7px 10px 6px;border-radius:8px;position:relative;cursor:pointer;
+  transition:filter 0.15s;
+}
+.bubble:hover{filter:brightness(0.95);}
+.bubble.out{background:var(--wa-bubble-out);border-radius:8px 2px 8px 8px;color:#111;}
+.bubble.in{background:var(--wa-bubble-in);border-radius:2px 8px 8px 8px;color:#111;}
+.bubble.selected{outline:3px solid var(--wa-green);outline-offset:2px;}
+.bubble.highlighted{background:#E8FAE0;animation:highlight 0.5s ease;}
+@keyframes highlight{0%{background:#C8F7B5;}100%{background:#E8FAE0;}}
+.bubble-text{font-size:14px;line-height:1.45;color:#111;}
+.bubble-meta{display:flex;align-items:center;gap:4px;justify-content:flex-end;margin-top:4px;}
+.bubble-time{font-size:10.5px;color:#8696A0;}
+.bubble-ticks{font-size:12px;color:var(--wa-blue);}
+.task-chip{
+  display:inline-flex;align-items:center;gap:5px;background:var(--wa-green);
+  color:white;font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;margin-top:5px;cursor:pointer;
+}
+.chat-input-area{
+  background:var(--wa-panel2);padding:8px 12px;display:flex;align-items:center;gap:10px;flex-shrink:0;
+}
+.chat-input{
+  flex:1;background:#2A3942;border:none;outline:none;border-radius:22px;
+  padding:9px 14px;color:var(--wa-text);font-size:14px;font-family:var(--font);
+}
+.chat-input::placeholder{color:var(--wa-text2);}
+.send-btn{
+  width:44px;height:44px;border-radius:50%;background:var(--wa-green);border:none;
+  display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;flex-shrink:0;
+}
+
+/* ── CONTEXT MENU ── */
+.context-menu{
+  position:absolute;background:var(--wa-panel2);border-radius:10px;
+  box-shadow:var(--shadow-lg);z-index:100;min-width:200px;overflow:hidden;
+  display:none;
+}
+.context-menu.show{display:block;}
+.ctx-emoji-row{display:flex;justify-content:space-around;padding:12px 10px;border-bottom:1px solid rgba(255,255,255,0.08);}
+.ctx-emoji{font-size:22px;cursor:pointer;padding:4px;border-radius:50%;transition:background 0.15s;}
+.ctx-emoji:hover{background:rgba(255,255,255,0.10);}
+.ctx-item{
+  display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;
+  font-size:14px;color:var(--wa-text);transition:background 0.15s;
+}
+.ctx-item:hover{background:var(--wa-panel3);}
+.ctx-item-icon{font-size:18px;}
+.ctx-create-task{color:var(--wa-green);font-weight:600;}
+
+/* ── MODAL BASE ── */
+.modal-overlay{
+  position:absolute;inset:0;background:rgba(0,0,0,0.60);z-index:200;
+  display:none;align-items:flex-end;justify-content:center;
+}
+.modal-overlay.show{display:flex;}
+.modal{
+  background:var(--wa-panel2);border-radius:20px 20px 0 0;width:100%;
+  padding:20px;max-height:85%;overflow-y:auto;
+  transform:translateY(100%);transition:transform 0.35s cubic-bezier(0.25,0.8,0.25,1);
+}
+.modal-overlay.show .modal{transform:translateY(0);}
+.modal-handle{width:36px;height:4px;background:rgba(255,255,255,0.20);border-radius:2px;margin:0 auto 16px;}
+.modal-title{font-size:17px;font-weight:700;color:var(--wa-text);margin-bottom:4px;}
+.modal-sub{font-size:13px;color:var(--wa-text2);margin-bottom:16px;}
+.quoted-msg{
+  background:#1A2C34;border-left:3px solid var(--wa-green);border-radius:6px;
+  padding:8px 12px;margin-bottom:16px;
+}
+.qm-label{font-size:11px;color:var(--wa-green);font-weight:600;margin-bottom:3px;}
+.qm-text{font-size:13px;color:var(--wa-text);}
+.form-group{margin-bottom:14px;}
+.form-label{font-size:13px;font-weight:600;color:var(--wa-text2);margin-bottom:6px;display:flex;align-items:center;gap:5px;}
+.form-input{
+  width:100%;background:#1A2C34;border:1.5px solid rgba(255,255,255,0.10);
+  border-radius:10px;padding:11px 14px;color:var(--wa-text);font-size:14px;
+  font-family:var(--font);outline:none;transition:border-color 0.15s;
+}
+.form-input:focus{border-color:var(--wa-green);}
+.priority-row{display:flex;gap:8px;}
+.priority-chip{
+  flex:1;padding:8px;border-radius:8px;text-align:center;font-size:12px;
+  font-weight:600;cursor:pointer;border:1.5px solid transparent;transition:all 0.15s;
+  background:#1A2C34;color:var(--wa-text2);
+}
+.priority-chip.sel-low{border-color:#00A884;color:#00A884;background:rgba(0,168,132,0.15);}
+.priority-chip.sel-med{border-color:#FFC107;color:#FFC107;background:rgba(255,193,7,0.15);}
+.priority-chip.sel-high{border-color:#F15C6D;color:#F15C6D;background:rgba(241,92,109,0.15);}
+.create-task-btn{
+  width:100%;background:var(--wa-green);color:white;border:none;
+  padding:14px;border-radius:12px;font-size:16px;font-weight:700;
+  cursor:pointer;font-family:var(--font);margin-top:6px;
+  transition:background 0.15s;
+}
+.create-task-btn:hover{background:var(--wa-green-dark);}
+.cancel-btn{
+  width:100%;background:transparent;color:var(--wa-text2);border:none;
+  padding:11px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);margin-top:8px;
+}
+
+/* ── SUCCESS MODAL ── */
+.success-icon{font-size:48px;text-align:center;margin-bottom:12px;}
+.success-title{font-size:18px;font-weight:800;color:var(--wa-text);text-align:center;margin-bottom:6px;}
+.success-sub{font-size:13px;color:var(--wa-text2);text-align:center;margin-bottom:20px;}
+.task-preview-card{
+  background:#1A2C34;border-radius:12px;padding:14px;margin-bottom:20px;
+  border:1px solid rgba(0,168,132,0.30);
+}
+.tpc-title{font-size:15px;font-weight:700;color:var(--wa-text);display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.tpc-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06);}
+.tpc-row:last-child{border-bottom:none;}
+.tpc-label{font-size:12.5px;color:var(--wa-text2);flex:1;}
+.tpc-val{font-size:12.5px;font-weight:600;color:var(--wa-text);}
+.view-tasks-btn{
+  width:100%;background:var(--wa-green);color:white;border:none;
+  padding:14px;border-radius:12px;font-size:15px;font-weight:700;
+  cursor:pointer;font-family:var(--font);
+}
+.go-back-btn{
+  width:100%;background:transparent;color:var(--wa-text2);border:none;
+  padding:11px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);margin-top:6px;
+}
+
+/* ── MY TASKS SCREEN ── */
+.tasks-header{
+  background:var(--wa-teal);padding:14px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0;
+}
+.tasks-title{font-size:18px;font-weight:700;color:white;flex:1;}
+.tasks-filter-row{
+  display:flex;gap:8px;padding:10px 12px;background:var(--wa-panel2);overflow-x:auto;flex-shrink:0;
+}
+.filter-chip{
+  padding:5px 14px;border-radius:20px;font-size:12.5px;font-weight:600;white-space:nowrap;cursor:pointer;
+  background:#1A2C34;color:var(--wa-text2);border:1.5px solid transparent;transition:all 0.15s;
+}
+.filter-chip.active{background:rgba(0,168,132,0.20);color:var(--wa-green);border-color:var(--wa-green);}
+.tasks-list{flex:1;overflow-y:auto;padding:10px 12px;background:#0B141A;display:flex;flex-direction:column;gap:8px;}
+.task-card{
+  background:var(--wa-panel2);border-radius:12px;padding:14px;
+  border-left:4px solid var(--wa-green);transition:all 0.2s;cursor:pointer;
+}
+.task-card.priority-high{border-left-color:var(--wa-red);}
+.task-card.priority-med{border-left-color:var(--wa-yellow);}
+.task-card.done{border-left-color:var(--wa-text2);opacity:0.65;}
+.task-card-top{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;}
+.task-checkbox{
+  width:22px;height:22px;border-radius:50%;border:2px solid var(--wa-text2);
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all 0.2s;margin-top:1px;
+}
+.task-checkbox.checked{background:var(--wa-green);border-color:var(--wa-green);color:white;font-size:13px;}
+.task-name{font-size:14.5px;font-weight:600;color:var(--wa-text);flex:1;line-height:1.35;}
+.task-name.done-text{text-decoration:line-through;color:var(--wa-text2);}
+.task-meta-row{display:flex;flex-wrap:wrap;gap:8px;margin-left:32px;}
+.task-meta-chip{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;
+}
+.tc-due{background:#1A2C34;color:var(--wa-text2);}
+.tc-due.overdue{background:rgba(241,92,109,0.15);color:var(--wa-red);}
+.tc-due.today{background:rgba(255,193,7,0.15);color:var(--wa-yellow);}
+.tc-reminder{background:rgba(83,189,235,0.15);color:var(--wa-blue);}
+.tc-source{background:rgba(0,168,132,0.12);color:var(--wa-green);}
+.tc-priority-h{background:rgba(241,92,109,0.15);color:var(--wa-red);}
+.tc-priority-m{background:rgba(255,193,7,0.15);color:var(--wa-yellow);}
+.tc-priority-l{background:rgba(0,168,132,0.15);color:var(--wa-green);}
+.empty-tasks{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:40px;}
+.empty-icon{font-size:48px;}
+.empty-text{font-size:16px;font-weight:700;color:var(--wa-text);}
+.empty-sub{font-size:13px;color:var(--wa-text2);text-align:center;}
+.fab{
+  position:absolute;bottom:20px;right:16px;
+  width:56px;height:56px;border-radius:50%;background:var(--wa-green);
+  border:none;font-size:24px;cursor:pointer;box-shadow:0 4px 16px rgba(0,168,132,0.40);
+  display:flex;align-items:center;justify-content:center;z-index:10;transition:transform 0.15s;
+}
+.fab:hover{transform:scale(1.05);}
+.tasks-summary{
+  background:var(--wa-panel2);padding:10px 16px;flex-shrink:0;
+  border-top:1px solid rgba(255,255,255,0.06);display:flex;justify-content:space-between;
+}
+.ts-stat{text-align:center;}
+.ts-num{font-size:18px;font-weight:800;color:var(--wa-text);}
+.ts-label{font-size:10.5px;color:var(--wa-text2);}
+
+/* ── TUTORIAL OVERLAY ── */
+.tutorial{
+  position:absolute;inset:0;background:rgba(0,0,0,0.85);z-index:500;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:24px;gap:20px;
+}
+.tutorial-step{
+  background:var(--wa-panel2);border-radius:14px;padding:16px 20px;width:100%;
+  display:flex;gap:14px;align-items:flex-start;
+}
+.t-num{
+  width:28px;height:28px;border-radius:50%;background:var(--wa-green);
+  color:white;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.t-title{font-size:14px;font-weight:700;color:var(--wa-text);margin-bottom:3px;}
+.t-desc{font-size:12.5px;color:var(--wa-text2);}
+.tutorial-start-btn{
+  background:var(--wa-green);color:white;border:none;
+  padding:14px 32px;border-radius:12px;font-size:16px;font-weight:700;
+  cursor:pointer;font-family:var(--font);
+}
+.tutorial-title{font-size:20px;font-weight:800;color:white;text-align:center;}
+.tutorial-sub{font-size:13px;color:rgba(255,255,255,0.65);text-align:center;}
+
+/* ── RIGHT PANEL (wireframe annotations) ── */
+.annotation-panel{flex:1;color:white;}
+.ann-title{font-size:26px;font-weight:800;margin-bottom:4px;}
+.ann-sub{font-size:14px;color:rgba(255,255,255,0.60);margin-bottom:24px;}
+.ann-section{margin-bottom:24px;}
+.ann-section-title{font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--wa-green);margin-bottom:12px;}
+.ann-item{display:flex;gap:12px;margin-bottom:12px;}
+.ann-num{width:28px;height:28px;border-radius:50%;background:var(--wa-green);color:white;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.ann-text{font-size:14px;color:rgba(255,255,255,0.80);line-height:1.5;}
+.ann-text strong{color:white;}
+.screen-buttons{display:flex;flex-direction:column;gap:8px;}
+.screen-btn{
+  display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(255,255,255,0.07);
+  border-radius:10px;border:1.5px solid rgba(255,255,255,0.12);cursor:pointer;
+  transition:all 0.15s;text-align:left;font-family:var(--font);color:white;
+}
+.screen-btn:hover{background:rgba(0,168,132,0.20);border-color:var(--wa-green);}
+.screen-btn.current{background:rgba(0,168,132,0.25);border-color:var(--wa-green);}
+.sb-icon{font-size:22px;width:32px;text-align:center;}
+.sb-info{}
+.sb-label{font-size:14px;font-weight:600;}
+.sb-desc{font-size:12px;color:rgba(255,255,255,0.55);margin-top:1px;}
+
+/* ── TOAST ── */
+.toast{
+  position:absolute;bottom:80px;left:50%;transform:translateX(-50%) translateY(60px);
+  background:#1F2C34;color:var(--wa-text);padding:10px 18px;border-radius:10px;
+  font-size:13px;font-weight:500;z-index:999;white-space:nowrap;
+  transition:transform 0.3s ease;box-shadow:var(--shadow);border:1px solid rgba(255,255,255,0.10);
+}
+.toast.show{transform:translateX(-50%) translateY(0);}
+
+/* scrollbar */
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.15);border-radius:2px;}
+</style>
+</head>
+<body>
+
+<div class="device-frame">
+
+  <!-- PHONE -->
+  <div class="phone" id="phone">
+    <div class="phone-notch"><div class="notch-bar"></div></div>
+
+    <!-- SCREEN 1: CHAT LIST -->
+    <div class="screen active" id="screen-chatlist">
+      <div class="status-bar"><span class="status-time">9:41</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
+      <div class="chats-header">
+        <div class="chats-title">WhatsApp</div>
+        <div class="chats-icons">
+          <button class="icon-btn">📷</button>
+          <button class="icon-btn">⋮</button>
+        </div>
+      </div>
+      <div class="search-bar">
+        <span style="font-size:16px;color:var(--wa-text2);">🔍</span>
+        <input type="text" placeholder="Search" readonly/>
+      </div>
+      <div class="chat-tabs">
+        <div class="chat-tab active">All</div>
+        <div class="chat-tab">Unread</div>
+        <div class="chat-tab">Groups</div>
+      </div>
+      <div class="chat-list">
+        <div class="chat-item" onclick="goToChat()">
+          <div class="chat-avatar" style="background:#E91E63;">S</div>
+          <div class="chat-info">
+            <div class="chat-top"><span class="chat-name">Study Group 📚</span><span class="chat-time" style="color:var(--wa-green);">9:35</span></div>
+            <div class="chat-preview">Submit Marketing Assignment by Friday 🔔</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><div class="chat-unread">3</div></div>
+        </div>
+        <div class="chat-item">
+          <div class="chat-avatar" style="background:#FF9800;">P</div>
+          <div class="chat-info">
+            <div class="chat-top"><span class="chat-name">Priya Sharma</span><span class="chat-time">9:20</span></div>
+            <div class="chat-preview">👍 Sure, I'll send the files tomorrow</div>
+          </div>
+        </div>
+        <div class="chat-item">
+          <div class="chat-avatar" style="background:#9C27B0;">W</div>
+          <div class="chat-info">
+            <div class="chat-top"><span class="chat-name">Work – PM Team</span><span class="chat-time">8:45</span></div>
+            <div class="chat-preview">🔔 Standup at 10 AM today, don't forget!</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;"><div class="chat-unread">1</div></div>
+        </div>
+        <div class="chat-item">
+          <div class="chat-avatar" style="background:#00BCD4;">R</div>
+          <div class="chat-info">
+            <div class="chat-top"><span class="chat-name">Rahul Mehta</span><span class="chat-time">Yesterday</span></div>
+            <div class="chat-preview">✅ Done! Sent you the report</div>
+          </div>
+        </div>
+        <div class="chat-item">
+          <div class="chat-avatar" style="background:#4CAF50;">F</div>
+          <div class="chat-info">
+            <div class="chat-top"><span class="chat-name">Family 🏠</span><span class="chat-time">Yesterday</span></div>
+            <div class="chat-preview">📷 Mom sent a photo</div>
+          </div>
+        </div>
+      </div>
+      <div class="bottom-nav">
+        <div class="nav-item"><div class="nav-icon active-nav">💬</div><div class="nav-label active-nav">Chats</div></div>
+        <div class="nav-item" onclick="goToTasks()"><div class="nav-icon nav-badge">✅</div><div class="nav-label">Tasks</div></div>
+        <div class="nav-item"><div class="nav-icon">👥</div><div class="nav-label">Communities</div></div>
+        <div class="nav-item"><div class="nav-icon">📞</div><div class="nav-label">Calls</div></div>
+      </div>
+    </div>
+
+    <!-- SCREEN 2: CHAT VIEW -->
+    <div class="screen" id="screen-chat">
+      <div class="status-bar"><span class="status-time">9:41</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
+      <div class="chat-header">
+        <button class="back-btn" onclick="goBack('screen-chatlist')">←</button>
+        <div class="chat-header-avatar" style="background:#E91E63;">S</div>
+        <div class="chat-header-info">
+          <div class="chat-header-name">Study Group 📚</div>
+          <div class="chat-header-status">Anjali, Priya, Rohan +2</div>
+        </div>
+        <div class="chat-header-icons">
+          <button class="icon-btn">🔍</button>
+          <button class="icon-btn">⋮</button>
+        </div>
+      </div>
+      <div class="messages-area" id="messagesArea">
+        <div class="date-sep"><span>Today</span></div>
+        <div class="msg-wrap in">
+          <div class="bubble in"><div class="bubble-text">Hey everyone! 👋 Don't forget about the assignment deadline</div><div class="bubble-meta"><span class="bubble-time">9:20 AM</span></div></div>
+        </div>
+        <div class="msg-wrap in">
+          <div class="bubble in"><div class="bubble-text">Yes! We need to submit the Marketing case study too</div><div class="bubble-meta"><span class="bubble-time">9:22 AM</span></div></div>
+        </div>
+        <div class="msg-wrap out">
+          <div class="bubble out"><div class="bubble-text">Got it! I'll start working on it today 📝</div><div class="bubble-meta"><span class="bubble-time">9:25 AM</span><span class="bubble-ticks">✓✓</span></div></div>
+        </div>
+        <div class="msg-wrap in">
+          <div class="bubble in" id="targetMsg" onclick="longPressMsg(event)">
+            <div class="bubble-text">📚 Submit Marketing Assignment by Friday — it's worth 30% of our grade!</div>
+            <div class="bubble-meta"><span class="bubble-time">9:30 AM</span></div>
+          </div>
+        </div>
+        <div class="msg-wrap out">
+          <div class="bubble out"><div class="bubble-text">Thanks for the reminder! Setting a task for this 🔔</div><div class="bubble-meta"><span class="bubble-time">9:32 AM</span><span class="bubble-ticks">✓✓</span></div></div>
+        </div>
+        <div class="msg-wrap in" id="taskConfirmMsg" style="display:none;">
+          <div class="bubble in">
+            <div class="bubble-text">✅ Task created!</div>
+            <div class="task-chip" onclick="goToTasks()">📋 Marketing Assignment →</div>
+            <div class="bubble-meta"><span class="bubble-time">9:35 AM</span></div>
+          </div>
+        </div>
+      </div>
+      <!-- Context Menu -->
+      <div class="context-menu" id="contextMenu">
+        <div class="ctx-emoji-row">
+          <span class="ctx-emoji" onclick="closeCtx()">👍</span>
+          <span class="ctx-emoji" onclick="closeCtx()">❤️</span>
+          <span class="ctx-emoji" onclick="closeCtx()">😂</span>
+          <span class="ctx-emoji" onclick="closeCtx()">😮</span>
+          <span class="ctx-emoji" onclick="closeCtx()">🙏</span>
+          <span class="ctx-emoji" onclick="closeCtx()">➕</span>
+        </div>
+        <div class="ctx-item ctx-create-task" onclick="openCreateTask()">
+          <span class="ctx-item-icon">✅</span> Create Task
+        </div>
+        <div class="ctx-item" onclick="closeCtx()"><span class="ctx-item-icon">↩️</span> Reply</div>
+        <div class="ctx-item" onclick="closeCtx()"><span class="ctx-item-icon">📌</span> Pin</div>
+        <div class="ctx-item" onclick="closeCtx()"><span class="ctx-item-icon">⭐</span> Star</div>
+        <div class="ctx-item" onclick="closeCtx()"><span class="ctx-item-icon">📋</span> Copy</div>
+        <div class="ctx-item" onclick="closeCtx()"><span class="ctx-item-icon">🗑️</span> Delete</div>
+      </div>
+      <!-- Modal: Create Task -->
+      <div class="modal-overlay" id="modal-create" onclick="closeModalOut(event,'modal-create')">
+        <div class="modal">
+          <div class="modal-handle"></div>
+          <div class="modal-title">✅ Create Task</div>
+          <div class="modal-sub">Convert this message into a trackable task</div>
+          <div class="quoted-msg">
+            <div class="qm-label">From Study Group 📚</div>
+            <div class="qm-text">📚 Submit Marketing Assignment by Friday — it's worth 30% of our grade!</div>
+          </div>
+          <div class="form-group">
+            <div class="form-label">📝 Task Name</div>
+            <input class="form-input" id="taskName" type="text" value="Submit Marketing Assignment"/>
+          </div>
+          <div class="form-group">
+            <div class="form-label">📅 Due Date</div>
+            <input class="form-input" id="taskDue" type="date"/>
+          </div>
+          <div class="form-group">
+            <div class="form-label">🔔 Reminder</div>
+            <select class="form-input" id="taskReminder">
+              <option>Thursday, 6:00 PM</option>
+              <option>Thursday, 9:00 AM</option>
+              <option>Friday, 8:00 AM</option>
+              <option>Custom time…</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <div class="form-label">⚡ Priority</div>
+            <div class="priority-row">
+              <div class="priority-chip" id="pLow" onclick="setPriority('low')">🟢 Low</div>
+              <div class="priority-chip sel-med" id="pMed" onclick="setPriority('med')">🟡 Medium</div>
+              <div class="priority-chip" id="pHigh" onclick="setPriority('high')">🔴 High</div>
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="form-label">📁 Assign to</div>
+            <select class="form-input">
+              <option>📋 My Tasks (Personal)</option>
+              <option>👥 Study Group Tasks</option>
+            </select>
+          </div>
+          <button class="create-task-btn" onclick="submitTask()">✅ Create Task</button>
+          <button class="cancel-btn" onclick="closeModal('modal-create')">Cancel</button>
+        </div>
+      </div>
+      <!-- Modal: Success -->
+      <div class="modal-overlay" id="modal-success">
+        <div class="modal">
+          <div class="modal-handle"></div>
+          <div class="success-icon">🎉</div>
+          <div class="success-title">Task Created!</div>
+          <div class="success-sub">Your task has been added to My Tasks. You'll get a reminder on Thursday at 6 PM.</div>
+          <div class="task-preview-card">
+            <div class="tpc-title"><span>✅</span> <span id="tpc-name">Marketing Assignment</span></div>
+            <div class="tpc-row"><span class="tpc-label">📅 Due Date</span><span class="tpc-val" id="tpc-due">Friday, Dec 13</span></div>
+            <div class="tpc-row"><span class="tpc-label">🔔 Reminder</span><span class="tpc-val">Thursday, 6:00 PM</span></div>
+            <div class="tpc-row"><span class="tpc-label">⚡ Priority</span><span class="tpc-val" id="tpc-priority">🟡 Medium</span></div>
+            <div class="tpc-row"><span class="tpc-label">💬 Source</span><span class="tpc-val" style="color:var(--wa-green);">Study Group 📚</span></div>
+          </div>
+          <button class="view-tasks-btn" onclick="closeModal('modal-success');goToTasks()">📋 View My Tasks →</button>
+          <button class="go-back-btn" onclick="closeModal('modal-success')">Back to Chat</button>
+        </div>
+      </div>
+      <div class="chat-input-area">
+        <button class="icon-btn" style="font-size:22px;">😊</button>
+        <input class="chat-input" placeholder="Message" readonly/>
+        <button class="icon-btn" style="font-size:22px;">📎</button>
+        <button class="send-btn">🎙️</button>
+      </div>
+    </div>
+
+    <!-- SCREEN 3: MY TASKS -->
+    <div class="screen" id="screen-tasks">
+      <div class="status-bar"><span class="status-time">9:41</span><div class="status-icons"><span>📶</span><span>🔋</span></div></div>
+      <div class="tasks-header">
+        <button class="back-btn" onclick="goBack('screen-chatlist')">←</button>
+        <div class="tasks-title">My Tasks</div>
+        <button class="icon-btn" onclick="showToast('Filter options')">⊞</button>
+        <button class="icon-btn">⋮</button>
+      </div>
+      <div class="tasks-summary">
+        <div class="ts-stat"><div class="ts-num" id="ts-total">4</div><div class="ts-label">Total</div></div>
+        <div class="ts-stat"><div class="ts-num" id="ts-due" style="color:var(--wa-yellow);">2</div><div class="ts-label">Due Today</div></div>
+        <div class="ts-stat"><div class="ts-num" id="ts-done" style="color:var(--wa-green);">1</div><div class="ts-label">Completed</div></div>
+        <div class="ts-stat"><div class="ts-num" id="ts-over" style="color:var(--wa-red);">0</div><div class="ts-label">Overdue</div></div>
+      </div>
+      <div class="tasks-filter-row">
+        <div class="filter-chip active" onclick="filterTasks('all',this)">All</div>
+        <div class="filter-chip" onclick="filterTasks('pending',this)">Pending</div>
+        <div class="filter-chip" onclick="filterTasks('done',this)">Completed</div>
+        <div class="filter-chip" onclick="filterTasks('high',this)">🔴 High</div>
+        <div class="filter-chip" onclick="filterTasks('chat',this)">From Chats</div>
+      </div>
+      <div class="tasks-list" id="tasksList"></div>
+      <button class="fab" onclick="showToast('Quick add task — type your task!')">+</button>
+      <div class="bottom-nav">
+        <div class="nav-item" onclick="goBack('screen-chatlist')"><div class="nav-icon">💬</div><div class="nav-label">Chats</div></div>
+        <div class="nav-item"><div class="nav-icon active-nav">✅</div><div class="nav-label active-nav">Tasks</div></div>
+        <div class="nav-item"><div class="nav-icon">👥</div><div class="nav-label">Communities</div></div>
+        <div class="nav-item"><div class="nav-icon">📞</div><div class="nav-label">Calls</div></div>
+      </div>
+    </div>
+
+    <!-- TUTORIAL -->
+    <div class="tutorial" id="tutorial">
+      <div class="tutorial-title">📱 Message-to-Task</div>
+      <div class="tutorial-sub">WhatsApp Feature Proposal — Interactive Wireframe</div>
+      <div class="tutorial-step"><div class="t-num">1</div><div><div class="t-title">Long-press any message</div><div class="t-desc">Tap the highlighted message in the chat to simulate long-press and see the context menu</div></div></div>
+      <div class="tutorial-step"><div class="t-num">2</div><div><div class="t-title">Select "Create Task"</div><div class="t-desc">Choose "Create Task" from the context menu that appears</div></div></div>
+      <div class="tutorial-step"><div class="t-num">3</div><div><div class="t-title">Fill in task details</div><div class="t-desc">Add due date, reminder and priority — message auto-fills the task name</div></div></div>
+      <div class="tutorial-step"><div class="t-num">4</div><div><div class="t-title">View in My Tasks</div><div class="t-desc">All tasks created from chats appear in the dedicated Tasks tab</div></div></div>
+      <button class="tutorial-start-btn" onclick="startDemo()">▶ Start Interactive Demo</button>
+    </div>
+
+    <div class="toast" id="toast"></div>
+  </div>
+
+  <!-- ANNOTATION PANEL -->
+  <div class="annotation-panel">
+    <div class="ann-title">Message-to-Task</div>
+    <div class="ann-sub">WhatsApp Feature Proposal · Product Manager Wireframe</div>
+
+    <div class="ann-section">
+      <div class="ann-section-title">Navigate Screens</div>
+      <div class="screen-buttons">
+        <div class="screen-btn current" id="btn-chatlist" onclick="jumpTo('screen-chatlist','btn-chatlist')">
+          <div class="sb-icon">💬</div><div class="sb-info"><div class="sb-label">Chat List</div><div class="sb-desc">Home screen with conversation list</div></div>
+        </div>
+        <div class="screen-btn" id="btn-chat" onclick="jumpTo('screen-chat','btn-chat');goToChat()">
+          <div class="sb-icon">📩</div><div class="sb-info"><div class="sb-label">Chat View → Long Press</div><div class="sb-desc">Tap the green message to trigger context menu</div></div>
+        </div>
+        <div class="screen-btn" id="btn-create" onclick="jumpTo('screen-chat','btn-chat');goToChat();openCreateTask()">
+          <div class="sb-icon">✅</div><div class="sb-info"><div class="sb-label">Create Task Modal</div><div class="sb-desc">Task creation form with AI pre-fill</div></div>
+        </div>
+        <div class="screen-btn" id="btn-tasks" onclick="jumpTo('screen-tasks','btn-tasks');goToTasks()">
+          <div class="sb-icon">📋</div><div class="sb-info"><div class="sb-label">My Tasks Screen</div><div class="sb-desc">All tasks from chats, filterable</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ann-section">
+      <div class="ann-section-title">Feature Flow</div>
+      <div class="ann-item"><div class="ann-num">1</div><div class="ann-text"><strong>Long-press message</strong> — Context menu appears with emoji reactions + action items including the new "Create Task" option</div></div>
+      <div class="ann-item"><div class="ann-num">2</div><div class="ann-text"><strong>AI pre-fills task name</strong> — The message text is parsed to extract the task. User can edit before saving</div></div>
+      <div class="ann-item"><div class="ann-num">3</div><div class="ann-text"><strong>Set due date + reminder</strong> — Suggested values auto-filled (Friday detected from message), user can override</div></div>
+      <div class="ann-item"><div class="ann-num">4</div><div class="ann-text"><strong>Task pinned to chat</strong> — A task chip appears in the chat thread linking back to the task for easy access</div></div>
+      <div class="ann-item"><div class="ann-num">5</div><div class="ann-text"><strong>My Tasks section</strong> — New bottom nav tab shows all tasks from all chats with filter, complete, and reminder controls</div></div>
+    </div>
+
+    <div class="ann-section">
+      <div class="ann-section-title">Design Decisions</div>
+      <div class="ann-item"><div class="ann-num">✦</div><div class="ann-text"><strong>Zero friction</strong> — "Create Task" is integrated into the existing long-press context menu, no new gestures needed</div></div>
+      <div class="ann-item"><div class="ann-num">✦</div><div class="ann-text"><strong>AI parsing</strong> — Message text is automatically parsed to suggest task name, due date, and priority</div></div>
+      <div class="ann-item"><div class="ann-num">✦</div><div class="ann-text"><strong>In-chat visibility</strong> — Task chip in chat thread means users never lose context of where a task came from</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// DATA
+// ════════════════════════════════════════
+let tasks = [
+  {id:1,name:"Submit Marketing Assignment",due:"2025-12-13",reminder:"Thu 6:00 PM",priority:"med",source:"Study Group 📚",done:false,fromChat:true},
+  {id:2,name:"Standup Meeting Prep",due:"2025-12-10",reminder:"Today 9:30 AM",priority:"high",source:"Work – PM Team",done:false,fromChat:true},
+  {id:3,name:"Send Project Files to Priya",due:"2025-12-11",reminder:"Tomorrow 10 AM",priority:"low",source:"Priya Sharma",done:true,fromChat:true},
+  {id:4,name:"Review PM Proposal Document",due:"2025-12-14",reminder:"Fri 11 AM",priority:"med",source:"Personal",done:false,fromChat:false},
+];
+let currentPriority = 'med';
+let taskAdded = false;
+
+// ════════════════════════════════════════
+// NAVIGATION
+// ════════════════════════════════════════
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function goBack(to){ showScreen(to); updateSidebarBtns(to); }
+function goToChat(){ showScreen('screen-chat'); updateSidebarBtns('screen-chat'); }
+function goToTasks(){ showScreen('screen-tasks'); renderTasks('all'); updateSidebarBtns('screen-tasks'); updateSummary(); }
+function jumpTo(screen, btn){
+  document.querySelectorAll('.screen-btn').forEach(b=>b.classList.remove('current'));
+  document.getElementById(btn).classList.add('current');
+}
+function updateSidebarBtns(screen){
+  const map={
+    'screen-chatlist':'btn-chatlist',
+    'screen-chat':'btn-chat',
+    'screen-tasks':'btn-tasks'
+  };
+  document.querySelectorAll('.screen-btn').forEach(b=>b.classList.remove('current'));
+  if(map[screen]) document.getElementById(map[screen])?.classList.add('current');
+}
+
+// ════════════════════════════════════════
+// LONG PRESS / CONTEXT MENU
+// ════════════════════════════════════════
+function longPressMsg(e){
+  e.stopPropagation();
+  document.getElementById('targetMsg').classList.add('selected');
+  const menu = document.getElementById('contextMenu');
+  const msgRect = document.getElementById('targetMsg').getBoundingClientRect();
+  const phoneRect = document.getElementById('phone').getBoundingClientRect();
+  menu.style.top = (msgRect.bottom - phoneRect.top + 4) + 'px';
+  menu.style.left = '10px';
+  menu.style.right = '10px';
+  menu.classList.add('show');
+  showToast('Long-press detected ✓');
+  document.addEventListener('click', closeCtxOutside, {once:true});
+}
+function closeCtxOutside(){ closeCtx(); }
+function closeCtx(){
+  document.getElementById('contextMenu').classList.remove('show');
+  document.getElementById('targetMsg').classList.remove('selected');
+}
+
+// ════════════════════════════════════════
+// MODALS
+// ════════════════════════════════════════
+function openCreateTask(){
+  closeCtx();
+  // Set default due date to next Friday
+  const d = new Date();
+  d.setDate(d.getDate() + (5 - d.getDay() + 7) % 7 || 7);
+  document.getElementById('taskDue').value = d.toISOString().split('T')[0];
+  document.getElementById('taskName').value = 'Submit Marketing Assignment';
+  const overlay = document.getElementById('modal-create');
+  overlay.classList.add('show');
+  document.getElementById('btn-create').classList.add('current');
+}
+function closeModal(id){
+  document.getElementById(id).classList.remove('show');
+}
+function closeModalOut(e, id){
+  if(e.target.classList.contains('modal-overlay')) closeModal(id);
+}
+
+function setPriority(p){
+  currentPriority = p;
+  document.getElementById('pLow').className = 'priority-chip' + (p==='low'?' sel-low':'');
+  document.getElementById('pMed').className = 'priority-chip' + (p==='med'?' sel-med':'');
+  document.getElementById('pHigh').className = 'priority-chip' + (p==='high'?' sel-high':'');
+}
+
+function submitTask(){
+  const name = document.getElementById('taskName').value.trim() || 'New Task';
+  const due = document.getElementById('taskDue').value;
+  const dueFmt = due ? new Date(due).toLocaleDateString('en-IN',{weekday:'long',month:'short',day:'numeric'}) : 'Friday';
+  const reminder = document.getElementById('taskReminder').value;
+  const pMap = {low:'🟢 Low',med:'🟡 Medium',high:'🔴 High'};
+
+  // Update success modal
+  document.getElementById('tpc-name').textContent = name;
+  document.getElementById('tpc-due').textContent = dueFmt;
+  document.getElementById('tpc-priority').textContent = pMap[currentPriority];
+
+  // Add to tasks array
+  if(!taskAdded){
+    tasks.unshift({id:Date.now(),name,due,reminder,priority:currentPriority,source:"Study Group 📚",done:false,fromChat:true});
+    taskAdded = true;
+    document.getElementById('taskConfirmMsg').style.display='flex';
+  }
+
+  closeModal('modal-create');
+  document.getElementById('modal-success').classList.add('show');
+  updateSummary();
+}
+
+// ════════════════════════════════════════
+// TASKS RENDERING
+// ════════════════════════════════════════
+function renderTasks(filter){
+  const list = document.getElementById('tasksList');
+  let filtered = [...tasks];
+  if(filter==='pending') filtered = filtered.filter(t=>!t.done);
+  else if(filter==='done') filtered = filtered.filter(t=>t.done);
+  else if(filter==='high') filtered = filtered.filter(t=>t.priority==='high');
+  else if(filter==='chat') filtered = filtered.filter(t=>t.fromChat);
+
+  if(filtered.length===0){
+    list.innerHTML=`<div class="empty-tasks"><div class="empty-icon">✅</div><div class="empty-text">No tasks here</div><div class="empty-sub">Convert messages into tasks by long-pressing any message and selecting "Create Task"</div></div>`;
+    return;
+  }
+
+  const dueLabelClass = (due)=>{
+    if(!due) return 'tc-due';
+    const d = new Date(due); const now = new Date();
+    if(d < now) return 'tc-due overdue';
+    if(d.toDateString()===now.toDateString()) return 'tc-due today';
+    return 'tc-due';
+  };
+  const dueLabelText = (due)=>{
+    if(!due) return '📅 No date';
+    const d = new Date(due); const now = new Date();
+    if(d < now) return '⚠️ Overdue';
+    if(d.toDateString()===now.toDateString()) return '📅 Today';
+    return '📅 '+d.toLocaleDateString('en-IN',{weekday:'short',month:'short',day:'numeric'});
+  };
+  const prioClass = {low:'tc-priority-l',med:'tc-priority-m',high:'tc-priority-h'};
+  const prioText = {low:'🟢 Low',med:'🟡 Medium',high:'🔴 High'};
+
+  list.innerHTML = filtered.map(t=>`
+    <div class="task-card priority-${t.priority} ${t.done?'done':''}" id="tc-${t.id}">
+      <div class="task-card-top">
+        <div class="task-checkbox ${t.done?'checked':''}" onclick="toggleTask(${t.id})">${t.done?'✓':''}</div>
+        <div class="task-name ${t.done?'done-text':''}">${t.name}</div>
+      </div>
+      <div class="task-meta-row">
+        <span class="task-meta-chip ${dueLabelClass(t.due)}">${dueLabelText(t.due)}</span>
+        <span class="task-meta-chip tc-reminder">🔔 ${t.reminder}</span>
+        ${t.fromChat?`<span class="task-meta-chip tc-source">💬 ${t.source}</span>`:''}
+        <span class="task-meta-chip ${prioClass[t.priority]}">${prioText[t.priority]}</span>
+      </div>
+    </div>`).join('');
+}
+
+function toggleTask(id){
+  const t = tasks.find(t=>t.id===id);
+  if(t){ t.done=!t.done; renderTasks(currentFilter); updateSummary(); showToast(t.done?'✅ Task completed!':'↩️ Task reopened'); }
+}
+
+let currentFilter = 'all';
+function filterTasks(filter, el){
+  currentFilter = filter;
+  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  renderTasks(filter);
+}
+
+function updateSummary(){
+  document.getElementById('ts-total').textContent = tasks.length;
+  document.getElementById('ts-done').textContent = tasks.filter(t=>t.done).length;
+  const now = new Date();
+  document.getElementById('ts-due').textContent = tasks.filter(t=>{
+    if(!t.due||t.done) return false;
+    return new Date(t.due).toDateString()===now.toDateString();
+  }).length;
+  document.getElementById('ts-over').textContent = tasks.filter(t=>{
+    if(!t.due||t.done) return false;
+    return new Date(t.due)<now;
+  }).length;
+}
+
+// ════════════════════════════════════════
+// TOAST
+// ════════════════════════════════════════
+let toastTimer;
+function showToast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>el.classList.remove('show'), 2500);
+}
+
+// ════════════════════════════════════════
+// TUTORIAL
+// ════════════════════════════════════════
+function startDemo(){
+  document.getElementById('tutorial').style.display='none';
+  goToChat();
+  setTimeout(()=>showToast('👆 Tap the green message to long-press it!'), 600);
+}
+
+// INIT
+updateSummary();
+</script>
+</body>
+</html>
